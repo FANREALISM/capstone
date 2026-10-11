@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiScale POS — Timbangan Digital</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════ TOP BAR ═══════════════════════ -->
+  <header class="topbar">
+    <div class="topbar-brand">⚖ DigiScale POS</div>
+    <div class="topbar-meta">
+      <span class="live-clock" id="liveClock"></span>
+      <button class="btn btn-manage" onclick="bukaManagerBarang()">⚙ Kelola Barang</button>
+      <span class="badge-ready"><span class="dot"></span>SIAP</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════ MODAL: KELOLA BARANG ══════════════════ -->
+  <div class="modal-overlay" id="modalOverlay" onclick="tutupModalJikaOverlay(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">⚙ Kelola Daftar Barang</span>
+        <button class="modal-close" onclick="tutupManagerBarang()" title="Tutup">✕</button>
+      </div>
+
+      <!-- Form tambah / edit -->
+      <div class="modal-form">
+        <input type="hidden" id="editId" value="" />
+        <div class="modal-field-row">
+          <div class="modal-field">
+            <label for="mfNama">Nama Barang</label>
+            <input type="text" id="mfNama" placeholder="cth: Semangka" maxlength="40" />
+          </div>
+          <div class="modal-field narrow">
+            <label for="mfHarga">Harga / Kg (Rp)</label>
+            <div class="input-wrap">
+              <span class="affix pre">Rp</span>
+              <input type="number" id="mfHarga" placeholder="0" min="0" step="500" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-btn-row">
+          <button class="btn btn-save" id="btnSave" onclick="simpanBarang()">💾 Simpan</button>
+          <button class="btn btn-cancel-edit" id="btnCancelEdit" onclick="batalEdit()" style="display:none">✕ Batal Edit</button>
+        </div>
+      </div>
+
+      <div class="modal-divider"></div>
+
+      <!-- List barang -->
+      <div class="modal-list-header">
+        <span>Nama Barang</span>
+        <span>Harga / Kg</span>
+        <span></span>
+      </div>
+      <div class="modal-list" id="modalList"></div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════ MAIN LAYOUT ═══════════════════════ -->
+  <main class="app-grid">
+
+    <!-- ─────────────── LEFT PANEL: SCALE ─────────────── -->
+    <section class="panel scale-panel">
+
+      <!-- Big weight display -->
+      <div class="lcd-screen">
+        <div class="lcd-row">
+          <div class="lcd-block">
+            <div class="lcd-label">BERAT KOTOR</div>
+            <div class="lcd-value" id="lcdGross">0.000 <span class="lcd-unit">kg</span></div>
+          </div>
+          <div class="lcd-sep">−</div>
+          <div class="lcd-block">
+            <div class="lcd-label">TARE</div>
+            <div class="lcd-value" id="lcdTare">0.000 <span class="lcd-unit">kg</span></div>
+          </div>
+          <div class="lcd-sep">=</div>
+          <div class="lcd-block accent">
+            <div class="lcd-label">BERAT BERSIH</div>
+            <div class="lcd-value" id="lcdNet">0.000 <span class="lcd-unit">kg</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="form-body">
+
+        <!-- Dropdown barang -->
+        <div class="field-row">
+          <div class="field full">
+            <label>Pilih Barang</label>
+            <select id="itemSelect">
+              <option value="">— Pilih Barang —</option>
+              <option value="Apel Fuji"         data-price="32000">Apel Fuji</option>
+              <option value="Apel Malang"        data-price="18000">Apel Malang</option>
+              <option value="Jeruk Pontianak"    data-price="22000">Jeruk Pontianak</option>
+              <option value="Jeruk Mandarin"     data-price="28000">Jeruk Mandarin</option>
+              <option value="Anggur Hijau"       data-price="55000">Anggur Hijau</option>
+              <option value="Mangga Harum Manis" data-price="20000">Mangga Harum Manis</option>
+              <option value="Daging Sapi"        data-price="130000">Daging Sapi</option>
+              <option value="Daging Ayam"        data-price="38000">Daging Ayam</option>
+              <option value="Ikan Salmon"        data-price="120000">Ikan Salmon</option>
+              <option value="Udang Segar"        data-price="75000">Udang Segar</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Berat & Harga inputs -->
+        <div class="field-row">
+          <div class="field">
+            <label>Berat Kotor (gram)</label>
+            <div class="input-wrap">
+              <input type="number" id="grossWeight" placeholder="0" min="0" step="1" />
+              <span class="affix suf">g</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Berat Tare (gram)</label>
+            <div class="input-wrap">
+              <input type="number" id="tareWeight" placeholder="0" min="0" step="1" />
+              <span class="affix suf">g</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Harga per Kg (Rp)</label>
+            <div class="input-wrap">
+              <span class="affix pre">Rp</span>
+              <input type="number" id="pricePerKg" placeholder="0" min="0" step="500" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Berat Bersih</label>
+            <div class="result-box" id="netWeightBox">0 gram</div>
+          </div>
+        </div>
+
+        <!-- Total price -->
+        <div class="total-row">
+          <div class="total-label">TOTAL HARGA</div>
+          <div class="total-value" id="totalPrice">Rp 0</div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="btn-row">
+          <button class="btn btn-add"   id="btnAdd"   onclick="tambahKeStruk()">+ Tambah ke Struk</button>
+          <button class="btn btn-reset" id="btnReset" onclick="resetTimbangan()">↺ Reset Timbangan</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─────────────── RIGHT PANEL: RECEIPT ─────────────── -->
+    <section class="panel receipt-panel">
+      <div class="receipt-header">
+        <span class="receipt-title">🧾 STRUK MINI</span>
+        <button class="btn btn-clear" onclick="kosongkanStruk()">✕ Kosongkan</button>
+      </div>
+
+      <div class="receipt-store">
+        <div class="store-name">SWALAYAN DIGITAL MART</div>
+        <div class="store-sub">Jl. Pasar Modern No. 1 • Kasir: 03</div>
+        <div class="receipt-divider dashed"></div>
+      </div>
+
+      <div class="receipt-list" id="receiptList">
+        <div class="receipt-empty" id="receiptEmpty">Belum ada barang ditambahkan.</div>
+      </div>
+
+      <div class="receipt-divider" id="receiptDivider" style="display:none"></div>
+
+      <div class="receipt-footer" id="receiptFooter" style="display:none">
+        <div class="footer-row">
+          <span>Subtotal</span><span id="footerSubtotal">Rp 0</span>
+        </div>
+        <div class="footer-row muted">
+          <span>Item</span><span id="footerCount">0 pcs</span>
+        </div>
+        <div class="footer-total">
+          <span>TOTAL BAYAR</span><span id="footerTotal">Rp 0</span>
+        </div>
+        <button class="btn btn-print" onclick="printStruk()">🖨 Cetak Struk</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
